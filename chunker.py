@@ -1,23 +1,13 @@
-from langchain_core.documents import Document
-from pathlib import Path
 import re
 import math
-
+from pathlib import Path
+from langchain_core.documents import Document
 from langchain_text_splitters import (
     HTMLHeaderTextSplitter,
     MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-
-
-UNSUPPORTED_EXTENSIONS = {
-    ".pdf",
-    ".zip",
-    ".png",
-    ".jpg",
-    ".ico",
-}
 
 
 class Chunker:
@@ -29,8 +19,6 @@ class Chunker:
             if len(chunk.page_content) > 1000:
                 added = math.ceil(len(chunk.page_content) / 1000)
                 added = math.ceil((len(chunk.page_content) + (added * 40)) / 1000)
-                print(chunk.metadata)
-                print("added", added)
                 new_chunks = []
 
                 start = 0
@@ -42,7 +30,9 @@ class Chunker:
                         metadata=chunk.metadata.copy(),
                     )
 
-                    new_chunk.metadata["start_char"] = chunk.metadata["start_char"] + start
+                    new_chunk.metadata["start_char"] = (
+                        chunk.metadata["start_char"] + start
+                    )
                     new_chunk.metadata["end_char"] = (
                         chunk.metadata["start_char"] + end
                     )
@@ -54,16 +44,8 @@ class Chunker:
                     else:
                         end += 1000 - 40
                 position = chunks.index(chunk)
-                chunks.remove(chunk)
                 chunks[position:position + 1] = new_chunks
-                for e in new_chunks:
-                    print(len(e.page_content), "\n")
-                    print(e.page_content, "\n")
-                    print(e.metadata)
-
-                
-
-
+              
     def add_markdown_offsets(self, text: str, chunks):
         headers = list(re.finditer("(?m)^#{1,4} .+$", text))
 
@@ -177,6 +159,7 @@ class Chunker:
                 add_start_index=True,
             )
             chunks = splitter.create_documents([text])
+            self.cut_if_long(chunks)
 
         elif path.suffix in {".sh", ".sample"}:
             splitter = RecursiveCharacterTextSplitter(
@@ -242,29 +225,6 @@ class Chunker:
                     start + len(chunk.page_content)
                 )
 
-            if len(chunk.page_content) > 1000:
-                print(len(chunk.page_content))
-                print(chunk.metadata)
-
-
         return chunks
 
 
-all_chunks = []
-
-chunker = Chunker()
-
-x = 0
-
-for path in Path(".").rglob("*"):
-    if path.is_file() and path.suffix not in UNSUPPORTED_EXTENSIONS:
-        new = chunker.split_file(path)
-        all_chunks.extend(new)
-
-        # if path.suffix == ".html" and x == 0:
-        #     for i, chunk in enumerate(new, 1):
-        #         print("==============", i)
-        #         print(chunk.page_content)
-        #         print(chunk.metadata)
-
-            # x += 1
