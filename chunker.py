@@ -1,5 +1,7 @@
+from langchain_core.documents import Document
 from pathlib import Path
 import re
+import math
 
 from langchain_text_splitters import (
     HTMLHeaderTextSplitter,
@@ -19,6 +21,49 @@ UNSUPPORTED_EXTENSIONS = {
 
 
 class Chunker:
+
+    def cut_if_long(self, chunks):
+
+        for chunk in chunks:
+            added = 0
+            if len(chunk.page_content) > 1000:
+                added = math.ceil(len(chunk.page_content) / 1000)
+                added = math.ceil((len(chunk.page_content) + (added * 40)) / 1000)
+                print(chunk.metadata)
+                print("added", added)
+                new_chunks = []
+
+                start = 0
+                end = 1000
+
+                for i in range(added):
+                    new_chunk = Document(
+                        page_content=chunk.page_content[start:end],
+                        metadata=chunk.metadata.copy(),
+                    )
+
+                    new_chunk.metadata["start_char"] = chunk.metadata["start_char"] + start
+                    new_chunk.metadata["end_char"] = (
+                        chunk.metadata["start_char"] + end
+                    )
+
+                    new_chunks.append(new_chunk)
+                    start = end - 40
+                    if i == added - 2:
+                        end = len(chunk.page_content)
+                    else:
+                        end += 1000 - 40
+                position = chunks.index(chunk)
+                chunks.remove(chunk)
+                chunks[position:position + 1] = new_chunks
+                for e in new_chunks:
+                    print(len(e.page_content), "\n")
+                    print(e.page_content, "\n")
+                    print(e.metadata)
+
+                
+
+
     def add_markdown_offsets(self, text: str, chunks):
         headers = list(re.finditer("(?m)^#{1,4} .+$", text))
 
@@ -109,6 +154,7 @@ class Chunker:
             chunks = splitter.split_text(text)
 
             self.add_markdown_offsets(text, chunks)
+            self.cut_if_long(chunks)
 
         elif path.suffix == ".html":
             splitter = HTMLHeaderTextSplitter(
@@ -195,6 +241,11 @@ class Chunker:
                 chunk.metadata["end_char"] = (
                     start + len(chunk.page_content)
                 )
+
+            if len(chunk.page_content) > 1000:
+                print(len(chunk.page_content))
+                print(chunk.metadata)
+
 
         return chunks
 
