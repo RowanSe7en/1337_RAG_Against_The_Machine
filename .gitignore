@@ -1,2 +1,4 @@
 t*
 __pycache__
+data/
+datasets_public/

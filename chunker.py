@@ -1,6 +1,7 @@
-import re
 import math
+import re
 from pathlib import Path
+
 from langchain_core.documents import Document
 from langchain_text_splitters import (
     HTMLHeaderTextSplitter,
@@ -11,92 +12,93 @@ from langchain_text_splitters import (
 
 
 class Chunker:
+    def __init__(self, max_chunk_size: int):
+        self.max_chunk_size = max_chunk_size
+        self.chunk_overlap = math.floor(max_chunk_size * 0.3)
 
-    def cut_if_long(self, chunks):
+    def cut_if_long(self, chunks: list[Document]) -> list[Document]:
+        """Cut chunks that exceed max_chunk_size."""
+        result = []
 
         for chunk in chunks:
-            added = 0
-            if len(chunk.page_content) > 1000:
-                added = math.ceil(len(chunk.page_content) / 1000)
-                added = math.ceil((len(chunk.page_content) + (added * 40)) / 1000)
-                new_chunks = []
+            if len(chunk.page_content) <= self.max_chunk_size:
+                result.append(chunk)
+                continue
 
-                start = 0
-                end = 1000
+            source_start = chunk.metadata["start_char"]
+            content_length = len(chunk.page_content)
 
-                for i in range(added):
-                    new_chunk = Document(
-                        page_content=chunk.page_content[start:end],
-                        metadata=chunk.metadata.copy(),
-                    )
+            start = 0
 
-                    new_chunk.metadata["start_char"] = (
-                        chunk.metadata["start_char"] + start
-                    )
-                    new_chunk.metadata["end_char"] = (
-                        chunk.metadata["start_char"] + end
-                    )
+            while start < content_length:
+                end = min(
+                    start + self.max_chunk_size,
+                    content_length,
+                )
 
-                    new_chunks.append(new_chunk)
-                    start = end - 40
-                    if i == added - 2:
-                        end = len(chunk.page_content)
-                    else:
-                        end += 1000 - 40
-                position = chunks.index(chunk)
-                chunks[position:position + 1] = new_chunks
-              
-    def add_markdown_offsets(self, text: str, chunks):
-        headers = list(re.finditer("(?m)^#{1,4} .+$", text))
+                new_chunk = Document(
+                    page_content=chunk.page_content[start:end],
+                    metadata=chunk.metadata.copy(),
+                )
 
+                new_chunk.metadata["start_char"] = (
+                    source_start + start
+                )
+                new_chunk.metadata["end_char"] = (
+                    source_start + end
+                )
+
+                result.append(new_chunk)
+
+                if end == content_length:
+                    break
+
+                start = end - self.chunk_overlap
+
+        return result
+
+    def add_markdown_offsets(
+        self,
+        text: str,
+        chunks: list[Document],
+    ) -> None:
+        """Add source offsets to Markdown chunks."""
         search_position = 0
 
         for chunk in chunks:
-            header = None
+            content = chunk.page_content.strip()
 
-            if "Header 4" in chunk.metadata:
-                header = "#### " + chunk.metadata["Header 4"]
-            elif "Header 3" in chunk.metadata:
-                header = "### " + chunk.metadata["Header 3"]
-            elif "Header 2" in chunk.metadata:
-                header = "## " + chunk.metadata["Header 2"]
-            elif "Header 1" in chunk.metadata:
-                header = "# " + chunk.metadata["Header 1"]
-
-            if header is None:
+            if not content:
                 continue
 
-            start = text.find(header, search_position)
+            start = text.find(content, search_position)
+
+            if start == -1:
+                # MarkdownHeaderTextSplitter can normalize whitespace.
+                # Try the first non-empty line as a fallback.
+                first_line = content.splitlines()[0].strip()
+                start = text.find(first_line, search_position)
 
             if start == -1:
                 continue
 
-            end = len(text)
-
-            for match in headers:
-                if match.start() > start:
-                    end = match.start()
-                    break
+            end = start + len(content)
 
             chunk.metadata["start_char"] = start
             chunk.metadata["end_char"] = end
 
             search_position = end
 
-    def add_html_offsets(self, text: str, chunks):
-
-        headers = list(
-            re.finditer(
-                r"(?is)<h([1-6])[^>]*>.*?</h\1>",
-                text,
-            )
-        )
-
+    def add_html_offsets(
+        self,
+        text: str,
+        chunks: list[Document],
+    ) -> None:
+        """Add source offsets to HTML chunks."""
         search_position = 0
 
         for chunk in chunks:
             content = chunk.page_content.strip()
-
 
             if not content:
                 continue
@@ -120,7 +122,8 @@ class Chunker:
 
             search_position = end
 
-    def split_file(self, path: Path):
+    def split_file(self, path: Path) -> list[Document]:
+        """Split a file into chunks."""
         with open(path, "r", errors="ignore") as myfile:
             text = myfile.read()
 
@@ -133,10 +136,12 @@ class Chunker:
                     ("####", "Header 4"),
                 ]
             )
+
             chunks = splitter.split_text(text)
 
             self.add_markdown_offsets(text, chunks)
-            self.cut_if_long(chunks)
+
+            chunks = self.cut_if_long(chunks)
 
         elif path.suffix == ".html":
             splitter = HTMLHeaderTextSplitter(
@@ -149,22 +154,26 @@ class Chunker:
                     ("h6", "Header 6"),
                 ]
             )
+
             chunks = splitter.split_text(text)
+
             self.add_html_offsets(text, chunks)
 
         elif path.suffix == ".py":
             splitter = PythonCodeTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=100,
+                chunk_size=self.max_chunk_size,
+                chunk_overlap=self.chunk_overlap,
                 add_start_index=True,
             )
+
             chunks = splitter.create_documents([text])
-            self.cut_if_long(chunks)
+
+            chunks = self.cut_if_long(chunks)
 
         elif path.suffix in {".sh", ".sample"}:
             splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=100,
+                chunk_size=self.max_chunk_size,
+                chunk_overlap=self.chunk_overlap,
                 separators=[
                     "\nfunction ",
                     "\nif ",
@@ -178,15 +187,17 @@ class Chunker:
                 ],
                 add_start_index=True,
             )
+
             chunks = splitter.create_documents([text])
 
         elif path.suffix == ".js":
             splitter = RecursiveCharacterTextSplitter.from_language(
                 language="js",
-                chunk_size=1000,
-                chunk_overlap=100,
+                chunk_size=self.max_chunk_size,
+                chunk_overlap=self.chunk_overlap,
                 add_start_index=True,
             )
+
             chunks = splitter.create_documents([text])
 
         elif path.suffix in {
@@ -199,18 +210,20 @@ class Chunker:
         }:
             splitter = RecursiveCharacterTextSplitter.from_language(
                 language="cpp",
-                chunk_size=1000,
-                chunk_overlap=100,
+                chunk_size=self.max_chunk_size,
+                chunk_overlap=self.chunk_overlap,
                 add_start_index=True,
             )
+
             chunks = splitter.create_documents([text])
 
         else:
             splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=100,
+                chunk_size=self.max_chunk_size,
+                chunk_overlap=self.chunk_overlap,
                 add_start_index=True,
             )
+
             chunks = splitter.create_documents([text])
 
         for chunk in chunks:
@@ -226,5 +239,3 @@ class Chunker:
                 )
 
         return chunks
-
-
