@@ -12,6 +12,7 @@ from langchain_text_splitters import (
 
 
 class Chunker:
+
     def __init__(self, max_chunk_size: int):
         self.max_chunk_size = max_chunk_size
         self.chunk_overlap = math.floor(max_chunk_size * 0.3)

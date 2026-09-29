@@ -1,7 +1,10 @@
+import json
+import fire
+import pickle
 from pathlib import Path
 from chunker import Chunker
 from retriever import BM25Retriever
-import json
+from tqdm import tqdm
 
 UNSUPPORTED_EXTENSIONS = {
     ".pdf",
@@ -44,61 +47,63 @@ def check_source(e):
         if iou > 0.05:
             return True
 
-        source_chunks = [
-            chunk
-            for chunk in bm
-            if chunk.metadata["source"] == rag_path
-        ]
-
-        for size in range(2, len(source_chunks) + 1):
-            for i in range(len(source_chunks) - size + 1):
-                combined = source_chunks[i:i + size]
-
-                start = min(
-                    chunk.metadata["start_char"]
-                    for chunk in combined
-                )
-
-                end = max(
-                    chunk.metadata["end_char"]
-                    for chunk in combined
-                )
-
-                iou = check_iou(first, last, start, end)
-
-                if iou > 0.05:
-                    return True
-
     return False
 
-if __name__ == "__main__":
+def search(query, k=5):
+    bm25Retriever = BM25Retriever()
+    best_matches = bm25Retriever.retrieve(query, k)
+
+    for bm in best_matches:
+        print(f"{bm.metadata['source']} [{bm.metadata['start_char']}:{bm.metadata['end_char']}]")
+
+
+def index(max_chunk_size=1700):
 
     all_chunks = []
 
-    chunker = Chunker(1700)
-
-    for path in Path("./data/raw").rglob("*"):
+    chunker = Chunker(max_chunk_size)
+    paths = list(Path("./data/raw").rglob("*"))
+    for path in tqdm(
+        paths,
+        desc="Chunking files",
+        unit="file",
+    ):
         if ".git" in path.parts:
             continue
+
         if path.is_file() and path.suffix not in UNSUPPORTED_EXTENSIONS:
-            new = chunker.split_file(path)
-            all_chunks.extend(new)
+            all_chunks.extend(chunker.split_file(path))
 
-    bm25Retriever = BM25Retriever(all_chunks)
-    p = Path("datasets_public/public/AnsweredQuestions/dataset_docs_public.json")
+    index_folder = Path("data/processed/")
+    index_folder.mkdir(parents=True, exist_ok=True)
 
-    with p.open("r") as f:
-        x = json.load(f)
-    query = ""
-    b = 0
-    g = 0
-    for k, y in x.items():
-        for e in y:
-            if check_source(e):
-                g += 1
-            else:
-                b += 1
+    index_file = index_folder / "chunks.pkl"
+
+    with open(index_file, "wb") as my_file:
+        pickle.dump(all_chunks, my_file)
+
+    bm25Retriever = BM25Retriever()
+    bm25Retriever.bm25_index(all_chunks)
+    
+
+if __name__ == "__main__":
+
+    fire.Fire()
+
+#     p = Path("datasets_public/public/AnsweredQuestions/dataset_docs_public.json")
+
+#     with p.open("r") as f:
+#         x = json.load(f)
+#     query = ""
+#     b = 0
+#     g = 0
+#     for k, y in x.items():
+#         for e in y:
+#             if check_source(e):
+#                 g += 1
+#             else:
+#                 b += 1
 
 
-print("FOUND:", g)
-print("MISSED:", b)
+# print("FOUND:", g)
+# print("MISSED:", b)
