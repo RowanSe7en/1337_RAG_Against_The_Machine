@@ -102,6 +102,7 @@ class BM25Retriever:
 
         scores = bm25_object.get_scores(query_tokens)
 
+
         top_indices = np.argsort(scores)[-k:][::-1]
 
         index_folder = Path("data/processed/")

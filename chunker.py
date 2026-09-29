@@ -1,6 +1,7 @@
 import math
 import re
 from pathlib import Path
+from pydantic import BaseModel
 
 from langchain_core.documents import Document
 from langchain_text_splitters import (
@@ -9,6 +10,12 @@ from langchain_text_splitters import (
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+
+
+class MinimalSource(BaseModel):
+    file_path: str
+    first_character_index: int
+    last_character_index: int
 
 
 class Chunker:
@@ -58,32 +65,72 @@ class Chunker:
 
         return result
 
-    def add_markdown_offsets(
-        self,
-        text: str,
-        chunks: list[Document],
+    def find_chunk_start(self, text: str,
+        content: str, search_position: int,
+    ) -> int:
+        """Find a chunk in the original text."""
+        content = content.strip()
+
+        if not content:
+            return -1
+
+        start = text.find(content, search_position)
+        if start != -1:
+            return start
+
+        lines = [
+            line.strip()
+            for line in content.splitlines()
+            if line.strip()
+        ]
+
+        if not lines:
+            return -1
+
+        for line in lines[:3]:
+            for length in (100, 50, 30, 20, 10):
+                if len(line) < length:
+                    continue
+
+                start = text.find(line[:length], search_position)
+
+                if start != -1:
+                    return start
+
+        return -1
+
+    def add_markdown_offsets(self, text: str,
+        chunks: list[Document], path
     ) -> None:
         """Add source offsets to Markdown chunks."""
         search_position = 0
 
         for chunk in chunks:
-            content = chunk.page_content.strip()
+            content = chunk.page_content
 
-            if not content:
+            start = self.find_chunk_start(
+                text,
+                content,
+                search_position,
+            )
+
+            lines = [
+                line.strip()
+                for line in content.splitlines()
+                if line.strip()
+            ]
+
+            last_line = lines[-1]
+
+            end_start = text.find(
+                last_line[:30],
+                start,
+            )
+
+            if end_start == -1:
                 continue
 
-            start = text.find(content, search_position)
-
-            if start == -1:
-                # MarkdownHeaderTextSplitter can normalize whitespace.
-                # Try the first non-empty line as a fallback.
-                first_line = content.splitlines()[0].strip()
-                start = text.find(first_line, search_position)
-
-            if start == -1:
-                continue
-
-            end = start + len(content)
+            end = end_start + len(last_line)
 
             chunk.metadata["start_char"] = start
             chunk.metadata["end_char"] = end
@@ -140,7 +187,7 @@ class Chunker:
 
             chunks = splitter.split_text(text)
 
-            self.add_markdown_offsets(text, chunks)
+            self.add_markdown_offsets(text, chunks, path)
 
             chunks = self.cut_if_long(chunks)
 
@@ -229,7 +276,6 @@ class Chunker:
 
         for chunk in chunks:
             chunk.metadata["source"] = str(path)
-            chunk.metadata["extension"] = path.suffix
 
             if "start_index" in chunk.metadata:
                 start = chunk.metadata.pop("start_index")
@@ -238,5 +284,11 @@ class Chunker:
                 chunk.metadata["end_char"] = (
                     start + len(chunk.page_content)
                 )
+
+            MinimalSource(
+                file_path=chunk.metadata["source"],
+                first_character_index=chunk.metadata["start_char"],
+                last_character_index=chunk.metadata["end_char"],
+            )
 
         return chunks
