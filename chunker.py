@@ -114,6 +114,10 @@ class Chunker:
                 search_position,
             )
 
+            if start == -1:
+                raise ValueError("couldn't find start index")
+
+
             lines = [
                 line.strip()
                 for line in content.splitlines()
@@ -128,7 +132,7 @@ class Chunker:
             )
 
             if end_start == -1:
-                continue
+                raise ValueError("couldn't find end index")
 
             end = end_start + len(last_line)
 
