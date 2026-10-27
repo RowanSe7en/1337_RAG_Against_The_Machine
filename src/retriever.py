@@ -63,7 +63,7 @@ def tokenize(text: str) -> list[str]:
 
 class BM25Retriever:
 
-    def bm25_index(self, chunks):
+    def bm25_index(self, chunks, index_folder):
 
         tokenized_chunks = []
 
@@ -72,7 +72,6 @@ class BM25Retriever:
         
         print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed/")
 
-        index_folder = Path("data/processed/")
         tokenized_data = index_folder / "tokenized_data.pkl"
 
         with open(tokenized_data, 'wb') as my_file:
@@ -80,32 +79,28 @@ class BM25Retriever:
 
         print("Building The BM25 index...")
 
-        bm25_object = BM25Okapi(tokenized_chunks)
+        bm25_retrieved_object = BM25Okapi(tokenized_chunks)
 
         bm25_index = index_folder / "bm25_index.pkl"
 
         with open(bm25_index, 'wb') as my_file:
-            pickle.dump(bm25_object, my_file)
+            pickle.dump(bm25_retrieved_object, my_file)
 
         print("The BM25 index built successfully.")
 
-    def retrieve(self, query: str, k: int = 5):
+    def retrieve(self, query: str, k: int, index_folder=Path("data/processed/")):
         """Retrieve the most relevant chunks."""
 
-        index_folder = Path("data/processed/")
         bm25_index = index_folder / "bm25_index.pkl"
 
         with open(bm25_index, "rb") as my_file:
-            bm25_object = pickle.load(my_file)
+            bm25_retrieved_object = pickle.load(my_file)
 
         query_tokens = tokenize(query)
 
-        scores = bm25_object.get_scores(query_tokens)
-
+        scores = bm25_retrieved_object.get_scores(query_tokens)
 
         top_indices = np.argsort(scores)[-k:][::-1]
-
-        index_folder = Path("data/processed/")
 
         index_file = index_folder / "chunks.pkl"
 

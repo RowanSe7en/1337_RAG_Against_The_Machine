@@ -65,29 +65,29 @@ class Chunker:
 
         return result
 
-    def find_chunk_start(self, text: str,
-        content: str, search_position: int,
+    def find_chunk_start(
+        self,
+        text: str,
+        content: str,
+        search_position: int,
     ) -> int:
         """Find a chunk in the original text."""
-        content = content.strip()
-
-        if not content:
-            return -1
 
         start = text.find(content, search_position)
         if start != -1:
             return start
 
-        lines = [
-            line.strip()
-            for line in content.splitlines()
-            if line.strip()
-        ]
+        lines = []
+        offset = 0
+
+        for line in content.splitlines(keepends=True):
+            lines.append((line, offset))
+            offset += len(line)
 
         if not lines:
             return -1
 
-        for line in lines[:3]:
+        for line, line_offset in lines[:3]:
             for length in (100, 50, 30, 20, 10):
                 if len(line) < length:
                     continue
@@ -95,34 +95,49 @@ class Chunker:
                 start = text.find(line[:length], search_position)
 
                 if start != -1:
-                    return start
+                    return start - line_offset
 
         return -1
 
-    def add_markdown_offsets(self, text: str,
-        chunks: list[Document], path
+
+    def add_offsets(
+        self,
+        text: str,
+        chunks: list[Document],
+        path=None,
     ) -> None:
-        """Add source offsets to Markdown chunks."""
+        """Add source offsets to Markdown or HTML chunks."""
+
         search_position = 0
 
         for chunk in chunks:
             content = chunk.page_content
 
-            start = self.find_chunk_start(
-                text,
-                content,
+            if not content:
+                continue
+
+            lines = [
+                line
+                for line in content.splitlines()
+                if line
+            ]
+
+            if not lines:
+                continue
+
+            # start = self.find_chunk_start(
+            #     text,
+            #     content,
+            #     search_position,
+            # )
+
+            start = text.find(
+                lines[0][:30],
                 search_position,
             )
 
             if start == -1:
                 raise ValueError("couldn't find start index")
-
-
-            lines = [
-                line.strip()
-                for line in content.splitlines()
-                if line.strip()
-            ]
 
             last_line = lines[-1]
 
@@ -141,38 +156,6 @@ class Chunker:
 
             search_position = end
 
-    def add_html_offsets(
-        self,
-        text: str,
-        chunks: list[Document],
-    ) -> None:
-        """Add source offsets to HTML chunks."""
-        search_position = 0
-
-        for chunk in chunks:
-            content = chunk.page_content.strip()
-
-            if not content:
-                continue
-
-            first_line = content.splitlines()[0].strip()
-            start = text.find(first_line, search_position)
-
-            if start == -1:
-                continue
-
-            last_line = content.splitlines()[-1].strip()
-            last_start = text.find(last_line, start)
-
-            if last_start == -1:
-                continue
-
-            end = last_start + len(last_line)
-
-            chunk.metadata["start_char"] = start
-            chunk.metadata["end_char"] = end
-
-            search_position = end
 
     def split_file(self, path: Path) -> list[Document]:
         """Split a file into chunks."""
@@ -191,8 +174,7 @@ class Chunker:
 
             chunks = splitter.split_text(text)
 
-            self.add_markdown_offsets(text, chunks, path)
-
+            self.add_offsets(text, chunks, path)
             chunks = self.cut_if_long(chunks)
 
         elif path.suffix == ".html":
@@ -209,7 +191,8 @@ class Chunker:
 
             chunks = splitter.split_text(text)
 
-            self.add_html_offsets(text, chunks)
+            self.add_offsets(text, chunks)
+            chunks = self.cut_if_long(chunks)
 
         elif path.suffix == ".py":
             splitter = PythonCodeTextSplitter(
@@ -219,8 +202,6 @@ class Chunker:
             )
 
             chunks = splitter.create_documents([text])
-
-            chunks = self.cut_if_long(chunks)
 
         elif path.suffix in {".sh", ".sample"}:
             splitter = RecursiveCharacterTextSplitter(

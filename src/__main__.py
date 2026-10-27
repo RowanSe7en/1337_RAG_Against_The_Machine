@@ -36,7 +36,7 @@ def check_iou(first, last, start, end):
     return intersection / union
 
 
-def check_recal_at_five(e):
+def check_recal_at_five(e, index_folder=Path("data/processed/")):
     query = e["question"]
 
     rag_path = e["sources"][0]["file_path"]
@@ -44,9 +44,10 @@ def check_recal_at_five(e):
     first = e["sources"][0]["first_character_index"]
     last = e["sources"][0]["last_character_index"]
 
-    bm = bm25Retriever.retrieve(query)
+    bm25Retriever = BM25Retriever()
+    best_matches = bm25Retriever.retrieve(query, 5, index_folder)
 
-    for chunk in bm:
+    for chunk in best_matches:
         if chunk.metadata["source"] != rag_path:
             continue
 
@@ -60,7 +61,7 @@ def check_recal_at_five(e):
 
     return False
 
-def search(query, k):
+def search(query, k, index_folder=Path("data/processed/")):
 
     if not query.strip():
         raise ValueError("query cannot be empty")
@@ -68,23 +69,23 @@ def search(query, k):
         print("falling back to the default top-k = 5")
         k = 5
     bm25Retriever = BM25Retriever()
-    best_matches = bm25Retriever.retrieve(query, k)
+    best_matches = bm25Retriever.retrieve(query, k, index_folder)
 
     for bm in best_matches:
         print(f"{bm.metadata['source']} [{bm.metadata['start_char']}:{bm.metadata['end_char']}]")
 
 
-def index(max_chunk_size=1700, folder_path=Path("data/processed/")):
+def index(max_chunk_size=1700, index_folder=Path("data/processed/")):
 
     if max_chunk_size < 10:
         print("falling back to the default max_chunk_size = 1700")
         max_chunk_size = 1700
 
-
     all_chunks = []
 
     chunker = Chunker(max_chunk_size)
     paths = list(Path("./data/raw").rglob("*"))
+
     for path in tqdm(
         paths,
         desc="Chunking files",
@@ -96,7 +97,7 @@ def index(max_chunk_size=1700, folder_path=Path("data/processed/")):
         if path.is_file() and path.suffix not in UNSUPPORTED_EXTENSIONS:
             all_chunks.extend(chunker.split_file(path))
 
-    index_folder = folder_path
+    index_folder = index_folder
     index_folder.mkdir(parents=True, exist_ok=True)
 
     index_file = index_folder / "chunks.pkl"
@@ -105,7 +106,7 @@ def index(max_chunk_size=1700, folder_path=Path("data/processed/")):
         pickle.dump(all_chunks, my_file)
 
     bm25Retriever = BM25Retriever()
-    bm25Retriever.bm25_index(all_chunks)
+    bm25Retriever.bm25_index(all_chunks, index_folder)
 
 
 def search_dataset(dataset_path=Path("data/datasets/UnansweredQuestions/dataset_code_public.json"), k=5, save_directory=Path("data/output/search_results/UnansweredQuestions")):
@@ -149,25 +150,24 @@ def search_dataset(dataset_path=Path("data/datasets/UnansweredQuestions/dataset_
 
 def answer_dataset(student_search_results_path=Path(" data/output/search_results/UnansweredQuestions/dataset_docs_public.json"), k=5, save_directory=Path("data/output/search_results_and_answer/UnansweredQuestions")):
     ...
+def a():
+    p = Path("/home/brouane/cursus/1337_RAG_Against_The_Machine/data/datasets/AnsweredQuestions/dataset_code_public.json")
 
+    with p.open("r") as f:
+        x = json.load(f)
+    query = ""
+    b = 0
+    g = 0
+    for y in x.values():
+        for e in y:
+            if check_recal_at_five(e):
+                g += 1
+            else:
+                b += 1
+
+
+    print("FOUND:", g)
+    print("MISSED:", b)
 if __name__ == "__main__":
 
     fire.Fire()
-
-#     p = Path("datasets_public/public/AnsweredQuestions/dataset_docs_public.json")
-
-#     with p.open("r") as f:
-#         x = json.load(f)
-#     query = ""
-#     b = 0
-#     g = 0
-#     for k, y in x.items():
-#         for e in y:
-#             if check_recal_at_five(e):
-#                 g += 1
-#             else:
-#                 b += 1
-
-
-# print("FOUND:", g)
-# print("MISSED:", b)
