@@ -2,8 +2,8 @@ import json
 import fire
 import pickle
 from pathlib import Path
-from chunker import Chunker
-from retriever import BM25Retriever
+from src.chunker import Chunker
+from src.retriever import BM25Retriever
 from tqdm import tqdm
 from pydantic import BaseModel, Field
 from typing import List
@@ -60,7 +60,7 @@ def check_recal_at_five(e):
 
     return False
 
-def search(query, k=5):
+def search(query, k):
 
     if not query.strip():
         raise ValueError("query cannot be empty")
