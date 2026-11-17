@@ -151,7 +151,7 @@ def search_dataset(dataset_path=Path("data/datasets/UnansweredQuestions/dataset_
 def answer_dataset(student_search_results_path=Path(" data/output/search_results/UnansweredQuestions/dataset_docs_public.json"), k=5, save_directory=Path("data/output/search_results_and_answer/UnansweredQuestions")):
     ...
 def a():
-    p = Path("/home/brouane/cursus/1337_RAG_Against_The_Machine/data/datasets/AnsweredQuestions/dataset_code_public.json")
+    p = Path("/home/brouane/cursus/1337_RAG_Against_The_Machine/data/datasets/AnsweredQuestions/dataset_docs_public.json")
 
     with p.open("r") as f:
         x = json.load(f)

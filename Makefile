@@ -1,4 +1,4 @@
-GOINFRE_DIR = /home/$(USER)/goinfre/rag_against_brouane
+GOINFRE_DIR = /home/$(USER)/goinfre/brouane_against_the_machine
 
 UV_CACHE    = $(GOINFRE_DIR)/uv-cache
 HF_CACHE    = $(GOINFRE_DIR)/huggingface

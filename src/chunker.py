@@ -1,12 +1,15 @@
+
 import math
 import re
 from pathlib import Path
+
+import numpy as np
 from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
 
 from langchain_core.documents import Document
 from langchain_text_splitters import (
     HTMLHeaderTextSplitter,
-    MarkdownHeaderTextSplitter,
     PythonCodeTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -24,8 +27,130 @@ class Chunker:
         self.max_chunk_size = max_chunk_size
         self.chunk_overlap = math.floor(max_chunk_size * 0.3)
 
-    def cut_if_long(self, chunks: list[Document]) -> list[Document]:
+        self.embedding_model = SentenceTransformer(
+            "all-MiniLM-L6-v2"
+        )
+
+    def semantic_split(
+        self,
+        text: str,
+        source: str,
+    ) -> list[Document]:
+        """Split text using embedding-based semantic boundaries."""
+
+        sentence_spans = []
+
+        for match in re.finditer(
+            r"\S.*?(?:[.!?](?=\s|$)|\n+|$)",
+            text,
+            re.DOTALL,
+        ):
+            start, end = match.span()
+
+            # while start < end and text[start].isspace():
+            #     start += 1
+
+            # while end > start and text[end - 1].isspace():
+            #     end -= 1
+
+            # if start < end:
+            sentence_spans.append((start, end))
+
+        if not sentence_spans:
+            return []
+
+        sentences = [
+            text[start:end]
+            for start, end in sentence_spans
+        ]
+
+        embeddings = self.embedding_model.encode(
+            sentences,
+            normalize_embeddings=True,
+            convert_to_numpy=True,
+            show_progress_bar=False,
+        )
+
+        distances = 1 - np.sum(
+            embeddings[:-1] * embeddings[1:],
+            axis=1,
+        )
+
+        threshold = (
+            np.percentile(distances, 95)
+            if len(distances) > 0
+            else float("inf")
+        )
+
+        chunks = []
+        current_start = 0
+        current_end = 0
+
+        def save_chunk(start_index, end_index):
+            start_char = sentence_spans[start_index][0]
+            end_char = sentence_spans[end_index][1]
+
+            content = text[start_char:end_char]
+
+            chunks.append(
+                Document(
+                    page_content=content,
+                    metadata={
+                        "source": source,
+                        "start_char": start_char,
+                        "end_char": end_char,
+                    },
+                )
+            )
+
+        for i, (start, end) in enumerate(sentence_spans):
+
+            if i == 0:
+                current_start = 0
+                current_end = 0
+                continue
+
+            next_size = (
+                end - sentence_spans[current_start][0]
+            )
+
+            semantic_boundary = distances[i - 1] > threshold
+
+            size_boundary = next_size > self.max_chunk_size
+
+            if semantic_boundary or size_boundary:
+                save_chunk(current_start, current_end)
+
+                # Preserve sentence-level overlap.
+                overlap_start = current_end + 1
+
+                while overlap_start > current_start:
+                    overlap_size = (
+                        sentence_spans[current_end][1]
+                        - sentence_spans[overlap_start - 1][0]
+                    )
+
+                    if overlap_size > self.chunk_overlap:
+                        break
+
+                    overlap_start -= 1
+
+                current_start = overlap_start
+                current_end = i
+
+            else:
+                current_end = i
+
+        save_chunk(current_start, current_end)
+
+        return chunks
+
+    def cut_if_long(
+        self,
+        chunks: list[Document],
+    ) -> list[Document]:
         """Cut chunks that exceed max_chunk_size."""
+
         result = []
 
         for chunk in chunks:
@@ -74,6 +199,7 @@ class Chunker:
         """Find a chunk in the original text."""
 
         start = text.find(content, search_position)
+
         if start != -1:
             return start
 
@@ -92,13 +218,15 @@ class Chunker:
                 if len(line) < length:
                     continue
 
-                start = text.find(line[:length], search_position)
+                start = text.find(
+                    line[:length],
+                    search_position,
+                )
 
                 if start != -1:
                     return start - line_offset
 
         return -1
-
 
     def add_offsets(
         self,
@@ -125,12 +253,6 @@ class Chunker:
             if not lines:
                 continue
 
-            # start = self.find_chunk_start(
-            #     text,
-            #     content,
-            #     search_position,
-            # )
-
             start = text.find(
                 lines[0][:30],
                 search_position,
@@ -156,26 +278,17 @@ class Chunker:
 
             search_position = end
 
-
     def split_file(self, path: Path) -> list[Document]:
         """Split a file into chunks."""
+
         with open(path, "r", errors="ignore") as myfile:
             text = myfile.read()
 
-        if path.suffix == ".md":
-            splitter = MarkdownHeaderTextSplitter(
-                headers_to_split_on=[
-                    ("#", "Header 1"),
-                    ("##", "Header 2"),
-                    ("###", "Header 3"),
-                    ("####", "Header 4"),
-                ]
+        if path.suffix in {".md", ".txt", ".rst"}:
+            chunks = self.semantic_split(
+                text,
+                str(path),
             )
-
-            chunks = splitter.split_text(text)
-
-            self.add_offsets(text, chunks, path)
-            chunks = self.cut_if_long(chunks)
 
         elif path.suffix == ".html":
             splitter = HTMLHeaderTextSplitter(
@@ -191,7 +304,7 @@ class Chunker:
 
             chunks = splitter.split_text(text)
 
-            self.add_offsets(text, chunks)
+            self.add_offsets(text, chunks, path)
             chunks = self.cut_if_long(chunks)
 
         elif path.suffix == ".py":
