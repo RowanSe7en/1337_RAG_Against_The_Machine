@@ -10,6 +10,11 @@ EXPORT_VENV     = export UV_PROJECT_ENVIRONMENT="$(GOINFRE_DIR)/.venv"
 QUERY ?= How to configure the OpenAI server?
 K ?= 5
 
+MAX_CHUNK_SIZE ?= 1700
+INDEX_FOLDER ?= data/processed/
+DATASET_PATH ?= data/datasets/UnansweredQuestions/dataset_code_public.json
+SAVE_DIRECTORY ?= data/output/search_results/UnansweredQuestions
+
 .PHONY: install run debug clean lint lint-strict
 
 install:
@@ -18,14 +23,16 @@ install:
 run: index 
 
 index:
-	uv run python -m src index 
+	uv run python -m src index --max_chunk_size $(MAX_CHUNK_SIZE) --index_folder "$(INDEX_FOLDER)"
 
 search:
-	uv run python -m src search "$(QUERY)" --k $(K)
+	uv run python -m src search "$(QUERY)" --k $(K) --index_folder "$(INDEX_FOLDER)"
+
+search_dataset:
+	uv run python -m src search_dataset --dataset_path "$(DATASET_PATH)" --k $(K) --save_directory "$(SAVE_DIRECTORY)"
 
 debug:
 	uv run python -m pdb -m src
-
 
 lint:
 	uv run flake8 . uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs

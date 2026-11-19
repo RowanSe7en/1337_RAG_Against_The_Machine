@@ -4,47 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from rank_bm25 import BM25Okapi
-
-
-STOP_WORDS = {
-    "what",
-    "what's",
-    "how",
-    "when",
-    "which",
-    "can",
-    "a",
-    "an",
-    "the",
-    "are",
-    "is",
-    "does",
-    "do",
-    "did",
-    "was",
-    "were",
-    "be",
-    "been",
-    "it",
-    "this",
-    "that",
-    "they",
-    "their",
-    "in",
-    "on",
-    "at",
-    "to",
-    "for",
-    "from",
-    "of",
-    "with",
-    "by",
-    "as",
-    "and",
-    "or",
-    "but",
-    "if",
-}
+from .tools import STOP_WORDS
 
 
 def tokenize(text: str) -> list[str]:
@@ -88,7 +48,7 @@ class BM25Retriever:
 
         print("The BM25 index built successfully.")
 
-    def retrieve(self, query: str, k: int, index_folder=Path("data/processed/")):
+    def retrieve(self, query: str, k: int, index_folder):
         """Retrieve the most relevant chunks."""
 
         bm25_index = index_folder / "bm25_index.pkl"
