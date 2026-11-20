@@ -14,6 +14,8 @@ MAX_CHUNK_SIZE ?= 1700
 INDEX_FOLDER ?= data/processed/
 DATASET_PATH ?= data/datasets/UnansweredQuestions/dataset_code_public.json
 SAVE_DIRECTORY ?= data/output/search_results/UnansweredQuestions
+STUDENT_SEARCH_RESULT_PATH ?= data/output/search_results/UnansweredQuestions/StudentSearchResults.json
+STUDENT_SEARCH_RESULT_AND_ANSWER_PATH ?= data/output/search_results/UnansweredQuestions/StudentSearchResultsAndAnswer.json
 
 .PHONY: install run debug clean lint lint-strict
 
@@ -30,6 +32,9 @@ search:
 
 search_dataset:
 	uv run python -m src search_dataset --dataset_path "$(DATASET_PATH)" --k $(K) --save_directory "$(SAVE_DIRECTORY)"
+
+answer_dataset:
+	uv run python -m src answer_dataset --student_search_results_path "$(STUDENT_SEARCH_RESULT_PATH)" --k $(K) --save_directory "$(SAVE_DIRECTORY)"
 
 debug:
 	uv run python -m pdb -m src
@@ -53,22 +58,16 @@ setup_goinfre:
 	@echo "echo '$(EXPORT_VENV)' >> ~/.zshrc"
 	@grep -qxF '$(EXPORT_VENV)' ~/.zshrc || echo '$(EXPORT_VENV)' >> ~/.zshrc
 
-	@echo ""
-	@echo "If your current shell is listed below, follow the corresponding steps:"
-	@echo "┌─────────┬──────────────────────────────────────────────┐"
-	@echo "│ Shell   │ Commands                                     │"
-	@echo "├─────────┼──────────────────────────────────────────────┤"
-	@echo "│ zsh     │ ✔ Nothing to do                              │"
-	@echo "├─────────┼──────────────────────────────────────────────┤"
-	@echo "│ fish    │ zsh                                          │"
-	@echo "│         │ source ~/.zshrc                              │"
-	@echo "│         │ fish                                         │"
-	@echo "├─────────┼──────────────────────────────────────────────┤"
-	@echo "│ bash    │ zsh                                          │"
-	@echo "│         │ source ~/.zshrc                              │"
-	@echo "│         │ bash                                         │"
-	@echo "└─────────┴──────────────────────────────────────────────┘"
-	@echo ""
+	echo ""
+	echo "If your current shell is listed below, follow the corresponding steps:"
+	echo ""
+	echo "zsh: Nothing to do."
+	echo ""
+	echo "fish or bash:"
+	echo "  1. Switch to zsh: zsh"
+	echo "  2. Load the configuration: source ~/.zshrc"
+	echo "  3. Return to your shell: fish (or bash)"
+	echo ""
 
 clean:
 	@echo "Removing temporary files and caches..."

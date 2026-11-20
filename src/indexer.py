@@ -8,8 +8,6 @@ from .tools import UNSUPPORTED_EXTENSIONS, corpus_path
 
 def indexer(max_chunk_size, index_folder):
 
-    print(type(max_chunk_size))
-
     if max_chunk_size < 10:
         print("falling back to the default max_chunk_size = 1700")
         max_chunk_size = 1700
