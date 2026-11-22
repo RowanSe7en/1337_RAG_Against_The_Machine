@@ -1,34 +1,37 @@
-[
-  {
-    "question_id": "189c8b8a-e59c-4fca-92ad-c02df42cbe40",
-    "question": "What activation formats does the fused batched MoE layer return in vLLM?",
-    "retrieved_sources": [
-      {
-        "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe.py",
-        "first_character_index": 16197,
-        "last_character_index": 17405
-      },
-      {
-        "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/modelopt.py",
-        "first_character_index": 62237,
-        "last_character_index": 63064
-      },
-      {
-        "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/gguf.py",
-        "first_character_index": 20015,
-        "last_character_index": 21195
-      },
-      {
-        "file_path": "data/raw/vllm-0.10.1/docs/design/fused_moe_modular_kernel.md",
-        "first_character_index": 0,
-        "last_character_index": 1626
-      },
-      {
-        "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/fp8.py",
-        "first_character_index": 45242,
-        "last_character_index": 46901
-      }
-    ],
-    "answer": "A. B. C. D. \n     I. contiguous tensors only  \n     II. batched tensors only  \n     III. contiguous and batched tensors  \n     IV. other formats  \n\nAnswer:\n\nII\nAnswer:\n\nOkay, let's see. The user is asking about the activation formats returned by the fused batched MoE layer in vLLM. \n\nLooking at the context provided, there's mention of two main types of FusedMoE implementations based on their input activation format. The first type is called Contiguous/Standard/Non-Batched, which uses a contiguous tensor of shape (M,K) along with TopK IDs and TopK weights. Then there's the Batched version, which returns a tensor of shape (num_experts, max_tokens, K). \n\nSo the key here is identifying what exactly each type represents. For the Batched variant, it says the activations are stored as a tensor of shape (num_experts, max_tokens, K). That means when you have more than one token per expert, they're grouped together. But wait, looking back at chunk 4, it mentions that the inputs depend on the All2All dispatch. So maybe the Batched version includes multiple tokens per expert but isn't necessarily contiguous?"
-  }
-]
+{
+  "search_results": [
+    {
+      "question_id": "189c8b8a-e59c-4fca-92ad-c02df42cbe40",
+      "question": "What activation formats does the fused batched MoE layer return in vLLM?",
+      "retrieved_sources": [
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe.py",
+          "first_character_index": 16197,
+          "last_character_index": 17405
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/modelopt.py",
+          "first_character_index": 62237,
+          "last_character_index": 63064
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/gguf.py",
+          "first_character_index": 20015,
+          "last_character_index": 21195
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/docs/design/fused_moe_modular_kernel.md",
+          "first_character_index": 0,
+          "last_character_index": 1626
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/fp8.py",
+          "first_character_index": 45242,
+          "last_character_index": 46901
+        }
+      ],
+      "answer": "Answer:\n\nThe fused batched MoE layer returns **contiguous/standard** and **batched** activation formats in vLLM. These formats depend on whether the All2All dispatch is used, which determines the structure of the inputs. Specifically, the **Contiguous** version returns activations as a contiguous tensor of"
+    }
+  ],
+  "k": 5
+}

@@ -29,3 +29,6 @@ class StudentSearchResultsAndAnswer(BaseModel):
 class StudentSearchResults(BaseModel):
     search_results: List[MinimalSearchResults]
     k: int
+
+class RagDataset(BaseModel):
+    rag_questions: List[AnsweredQuestion | UnansweredQuestion]

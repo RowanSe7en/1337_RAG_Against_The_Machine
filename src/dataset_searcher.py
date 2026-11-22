@@ -1,5 +1,5 @@
 from pathlib import Path
-from .base_models import UnansweredQuestion
+from .base_models import RagDataset, MinimalSearchResults, StudentSearchResults
 from .retriever import BM25Retriever
 from tqdm import tqdm
 import json
@@ -16,27 +16,35 @@ def dataset_searcher(dataset_path, k, save_directory):
 
     res_dict = {"search_results": [], "k": k}
 
-    for v in questions.values():
-        for e in tqdm(list(v), desc="Searching datasets", unit="question"):
-            answer_dict = {}
-            UnansweredQuestion(**e)
-            question_id = e['question_id']
-            question = e['question']
+    rag_questions = questions["rag_questions"]
 
-            bm25Retriever = BM25Retriever()
-            best_matches = bm25Retriever.retrieve(question, k, Path(processed_path))
+    RagDataset(**questions)
 
-            answer_dict['question'] = question
-            answer_dict['question_id'] = question_id
-            answer_dict['retrieved_sources'] = []
+    for question in tqdm(rag_questions, desc="Searching datasets", unit="question"):
 
-            for bm in best_matches:
-                file_dict = {}
-                file_dict['file_path'] = bm.metadata['source']
-                file_dict['first_character_index'] = bm.metadata['start_char']
-                file_dict['last_character_index'] = bm.metadata['end_char']
-                answer_dict['retrieved_sources'].append(file_dict)
-            res_dict['search_results'].append(answer_dict)
+        answer_dict = {}
+        # UnansweredQuestion(**e)
+        question_id = question['question_id']
+        question = question['question']
+
+        bm25Retriever = BM25Retriever()
+        best_matches = bm25Retriever.retrieve(question, k, Path(processed_path))
+
+        answer_dict['question_id'] = question_id
+        answer_dict['question'] = question
+        answer_dict['retrieved_sources'] = []
+
+        for bm in best_matches:
+            file_dict = {}
+            file_dict['file_path'] = bm.metadata['source']
+            file_dict['first_character_index'] = bm.metadata['start_char']
+            file_dict['last_character_index'] = bm.metadata['end_char']
+            answer_dict['retrieved_sources'].append(file_dict)
+        res_dict['search_results'].append(answer_dict)
+
+        MinimalSearchResults(**answer_dict)
+
+    StudentSearchResults(**res_dict)
 
     save_directory.mkdir(parents=True, exist_ok=True)
     save_file = save_directory / search_results_file_path

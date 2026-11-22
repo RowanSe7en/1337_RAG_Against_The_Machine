@@ -1,1 +1,36 @@
-{"search_results": [{"question": "What activation formats does the fused batched MoE layer return in vLLM?", "question_id": "189c8b8a-e59c-4fca-92ad-c02df42cbe40", "retrieved_sources": [{"file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe.py", "first_character_index": 16197, "last_character_index": 17405}, {"file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/modelopt.py", "first_character_index": 62237, "last_character_index": 63064}, {"file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/gguf.py", "first_character_index": 20015, "last_character_index": 21195}, {"file_path": "data/raw/vllm-0.10.1/docs/design/fused_moe_modular_kernel.md", "first_character_index": 0, "last_character_index": 1626}, {"file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/fp8.py", "first_character_index": 45242, "last_character_index": 46901}]}], "k": 5}
+{
+  "search_results": [
+    {
+      "question_id": "189c8b8a-e59c-4fca-92ad-c02df42cbe40",
+      "question": "What activation formats does the fused batched MoE layer return in vLLM?",
+      "retrieved_sources": [
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe.py",
+          "first_character_index": 16197,
+          "last_character_index": 17405
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/modelopt.py",
+          "first_character_index": 62237,
+          "last_character_index": 63064
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/gguf.py",
+          "first_character_index": 20015,
+          "last_character_index": 21195
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/docs/design/fused_moe_modular_kernel.md",
+          "first_character_index": 0,
+          "last_character_index": 1626
+        },
+        {
+          "file_path": "data/raw/vllm-0.10.1/vllm/model_executor/layers/quantization/fp8.py",
+          "first_character_index": 45242,
+          "last_character_index": 46901
+        }
+      ]
+    }
+  ],
+  "k": 5
+}
