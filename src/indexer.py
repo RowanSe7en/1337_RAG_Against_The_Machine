@@ -3,7 +3,7 @@ from pathlib import Path
 from src.chunker import Chunker
 from src.retriever import BM25Retriever
 from tqdm import tqdm
-from .tools import UNSUPPORTED_EXTENSIONS, corpus_path
+from .utils import UNSUPPORTED_EXTENSIONS, corpus_path
 
 
 def indexer(max_chunk_size, index_folder):

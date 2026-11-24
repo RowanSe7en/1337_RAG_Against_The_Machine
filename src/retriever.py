@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from rank_bm25 import BM25Okapi
-from .tools import STOP_WORDS
+from .utils import STOP_WORDS
 
 
 def tokenize(text: str) -> list[str]:

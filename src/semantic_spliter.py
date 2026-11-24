@@ -63,9 +63,9 @@ class SemanticSpliter():
                 Document(
                     page_content=content,
                     metadata={
-                        "source": source,
-                        "start_char": start_char,
-                        "end_char": end_char,
+                        "file_path": source,
+                        "first_character_index": start_char,
+                        "last_character_index": end_char,
                     },
                 )
             )

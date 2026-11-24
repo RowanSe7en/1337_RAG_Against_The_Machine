@@ -30,6 +30,9 @@ index:
 search:
 	uv run python -m src search "$(QUERY)" --k $(K) --index_folder "$(INDEX_FOLDER)"
 
+answer:
+	uv run python -m src answer "$(QUERY)" --k $(K)
+
 search_dataset:
 	uv run python -m src search_dataset --dataset_path "$(DATASET_PATH)" --k $(K) --save_directory "$(SAVE_DIRECTORY)"
 

@@ -3,7 +3,7 @@ from .base_models import RagDataset, MinimalSearchResults, StudentSearchResults
 from .retriever import BM25Retriever
 from tqdm import tqdm
 import json
-from .tools import search_results_file_path, processed_path
+from .utils import search_results_file_path, processed_path
 
 def dataset_searcher(dataset_path, k, save_directory):
 
@@ -36,9 +36,9 @@ def dataset_searcher(dataset_path, k, save_directory):
 
         for bm in best_matches:
             file_dict = {}
-            file_dict['file_path'] = bm.metadata['source']
-            file_dict['first_character_index'] = bm.metadata['start_char']
-            file_dict['last_character_index'] = bm.metadata['end_char']
+            file_dict['file_path'] = bm.metadata['file_path']
+            file_dict['first_character_index'] = bm.metadata['first_character_index']
+            file_dict['last_character_index'] = bm.metadata['last_character_index']
             answer_dict['retrieved_sources'].append(file_dict)
         res_dict['search_results'].append(answer_dict)
 

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from .recall import check_recall_at_five
-from .tools import dataset_code_path, dataset_docs_path
+from .utils import dataset_code_path, dataset_docs_path
 
 def aa():
     p = Path(dataset_code_path)

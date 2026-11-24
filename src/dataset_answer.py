@@ -3,7 +3,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from .searcher import searcher
 from .base_models import StudentSearchResultsAndAnswer, MinimalAnswer
 import json
-from .tools import search_results_and_answer_file_path
+from .utils import search_results_and_answer_file_path
 from tqdm import tqdm
 
 def ask_model(model, tokenizer, query: str, retrieved_chunks) -> str:
@@ -81,7 +81,7 @@ def dataset_answer(student_search_results_path, k, save_directory):
 
     search_results = []
 
-    for retrive in tqdm(all_retrived):
+    for retrive in tqdm(all_retrived, desc="Answering datasets", unit="question"):
 
         query = retrive["question"]
         retrieved_sources = retrive["retrieved_sources"]

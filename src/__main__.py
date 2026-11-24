@@ -4,6 +4,7 @@ from .indexer import indexer
 from .searcher import searcher
 from .dataset_searcher import dataset_searcher
 from .dataset_answer import dataset_answer
+from .responder import responder
 from .delete import aa
 
 def index(max_chunk_size, index_folder):
@@ -14,8 +15,10 @@ def search(query, k, index_folder):
     best_matches = searcher(query, k, Path(index_folder))
 
     for bm in best_matches:
-        print(f"{bm.metadata['source']} [{bm.metadata['start_char']}:{bm.metadata['end_char']}]")
+        print(f"{bm.metadata['file_path']} [{bm.metadata['first_character_index']}:{bm.metadata['last_character_index']}]")
 
+def answer(query, k):
+    print(responder(query, k))
 
 def search_dataset(dataset_path, k, save_directory):
     dataset_searcher(Path(dataset_path), k, Path(save_directory))

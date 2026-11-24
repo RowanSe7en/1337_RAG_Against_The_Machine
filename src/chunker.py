@@ -5,7 +5,7 @@ from .base_models import MinimalSource
 from sentence_transformers import SentenceTransformer
 from langchain_core.documents import Document
 from .semantic_spliter import SemanticSpliter
-from .tools import html_separators, shell_separators
+from .utils import html_separators, shell_separators
 from .splitters import py_splitter, separators_splitter, language_splitter
 
 class Chunker(SemanticSpliter):
@@ -21,20 +21,20 @@ class Chunker(SemanticSpliter):
     def add_metadata(self, chunks, path):
 
         for chunk in chunks:
-            chunk.metadata["source"] = path
+            chunk.metadata["file_path"] = path
 
             if "start_index" in chunk.metadata:
                 start = chunk.metadata.pop("start_index")
 
-                chunk.metadata["start_char"] = start
-                chunk.metadata["end_char"] = (
+                chunk.metadata["first_character_index"] = start
+                chunk.metadata["last_character_index"] = (
                     start + len(chunk.page_content)
                 )
 
             MinimalSource(
-                file_path=chunk.metadata["source"],
-                first_character_index=chunk.metadata["start_char"],
-                last_character_index=chunk.metadata["end_char"],
+                file_path=chunk.metadata["file_path"],
+                first_character_index=chunk.metadata["first_character_index"],
+                last_character_index=chunk.metadata["last_character_index"],
             )
 
         return chunks

@@ -1,6 +1,6 @@
 from pathlib import Path
 from src.retriever import BM25Retriever
-from .tools import processed_path
+from .utils import processed_path
 
 
 def check_iou(first, last, start, end):
@@ -25,11 +25,11 @@ def check_recall_at_five(e, index_folder=Path(processed_path)):
     best_matches = bm25Retriever.retrieve(query, 5, index_folder)
 
     for chunk in best_matches:
-        if chunk.metadata["source"] != rag_path:
+        if chunk.metadata["file_path"] != rag_path:
             continue
 
-        start = chunk.metadata["start_char"]
-        end = chunk.metadata["end_char"]
+        start = chunk.metadata["first_character_index"]
+        end = chunk.metadata["last_character_index"]
 
         iou = check_iou(first, last, start, end)
 
