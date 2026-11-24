@@ -2,7 +2,6 @@ import re
 import pickle
 import numpy as np
 from tqdm import tqdm
-from pathlib import Path
 from rank_bm25 import BM25Okapi
 from .utils import STOP_WORDS
 
