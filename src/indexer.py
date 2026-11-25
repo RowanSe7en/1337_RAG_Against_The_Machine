@@ -3,10 +3,10 @@ from pathlib import Path
 from src.chunker import Chunker
 from src.retriever import BM25Retriever
 from tqdm import tqdm
-from .utils import UNSUPPORTED_EXTENSIONS, corpus_path
+from .utils import UNSUPPORTED_EXTENSIONS, corpus_path, processed_path
 
 
-def indexer(max_chunk_size, index_folder):
+def indexer(max_chunk_size):
 
     if max_chunk_size < 10:
         print("falling back to the default max_chunk_size = 1700")
@@ -28,13 +28,13 @@ def indexer(max_chunk_size, index_folder):
         if path.is_file() and path.suffix not in UNSUPPORTED_EXTENSIONS:
             all_chunks.extend(chunker.split_file(path))
 
-    index_folder = index_folder
-    index_folder.mkdir(parents=True, exist_ok=True)
+    dire = Path(processed_path)
+    dire.mkdir(parents=True, exist_ok=True)
 
-    index_file = index_folder / "chunks.pkl"
+    index_file = dire / "chunks.pkl"
 
     with open(index_file, "wb") as my_file:
         pickle.dump(all_chunks, my_file)
 
     bm25Retriever = BM25Retriever()
-    bm25Retriever.bm25_index(all_chunks, index_folder)
+    bm25Retriever.bm25_index(all_chunks, dire)

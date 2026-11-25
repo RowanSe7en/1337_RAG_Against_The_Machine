@@ -26,7 +26,7 @@ install:
 run: index 
 
 index:
-	uv run python -m src index --max_chunk_size $(MAX_CHUNK_SIZE) --index_folder "$(INDEX_FOLDER)"
+	uv run python -m src index --max_chunk_size $(MAX_CHUNK_SIZE)
 
 search:
 	uv run python -m src search "$(QUERY)" --k $(K) --index_folder "$(INDEX_FOLDER)"

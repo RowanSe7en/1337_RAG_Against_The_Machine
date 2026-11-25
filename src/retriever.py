@@ -29,7 +29,7 @@ class BM25Retriever:
         for chunk in tqdm(chunks, desc="Tokenizing chunks", unit="chunk"):
             tokenized_chunks.append(tokenize(chunk.page_content))
         
-        print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed/")
+        print(f"Ingestion complete! Indexed {len(chunks)} chunks under {index_folder}")
 
         tokenized_data = index_folder / "tokenized_data.pkl"
 

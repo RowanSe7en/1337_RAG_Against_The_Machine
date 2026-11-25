@@ -81,6 +81,7 @@ shell_separators=[
 ]
 
 max_chunk_size = 1700
+k = 5
 
 processed_path = "data/processed"
 corpus_path = "data/raw"
@@ -93,3 +94,5 @@ search_results_dir_path = "data/output/search_results/UnansweredQuestions"
 
 student_search_results_path = "data/output/search_results/UnansweredQuestions/dataset_docs_public.json"
 search_results_and_answer_path = "data/output/search_results_and_answer/UnansweredQuestions"
+
+answered_dataset_code_path = "data/datasets/AnsweredQuestions/dataset_docs_public.json"
