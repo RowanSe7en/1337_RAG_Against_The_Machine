@@ -3,7 +3,7 @@ from .base_models import RagDataset, MinimalSearchResults, StudentSearchResults
 from .retriever import BM25Retriever
 from tqdm import tqdm
 import json
-from .utils import search_results_file_path, processed_path
+from .utils import processed_path
 
 def dataset_searcher(dataset_path, k, save_directory):
 
@@ -47,6 +47,7 @@ def dataset_searcher(dataset_path, k, save_directory):
     StudentSearchResults(**res_dict)
 
     save_directory.mkdir(parents=True, exist_ok=True)
+    search_results_file_path = Path(dataset_path).name
     save_file = save_directory / search_results_file_path
     with open(save_file, 'w') as my_file:
         json.dump(res_dict, my_file)

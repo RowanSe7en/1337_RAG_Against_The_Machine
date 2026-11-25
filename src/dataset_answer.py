@@ -1,9 +1,9 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .base_models import StudentSearchResultsAndAnswer, MinimalAnswer
 import json
-from .utils import search_results_and_answer_file_path
 from tqdm import tqdm
 from .model import ask_model, download_model
+from pathlib import Path
 
 def dataset_answer(student_search_results_path, k, save_directory):
     model_path = download_model()
@@ -26,7 +26,7 @@ def dataset_answer(student_search_results_path, k, save_directory):
         chunks = []
 
         for i, source in enumerate(retrieved_sources, start=1):
-            with open(source["file_path"]) as my_file:
+            with open(source["file_path"], 'r') as my_file:
                 content = my_file.read()
                 chunk_content = content[
                     source["first_character_index"]:source["last_character_index"]
@@ -56,6 +56,7 @@ def dataset_answer(student_search_results_path, k, save_directory):
     StudentSearchResultsAndAnswer(**d)
 
     save_directory.mkdir(parents=True, exist_ok=True)
+    search_results_and_answer_file_path = Path(student_search_results_path).name
     save_file = save_directory / search_results_and_answer_file_path
     with open(save_file, 'w') as my_file:
         json.dump(d, my_file)

@@ -5,6 +5,7 @@ from .searcher import searcher
 from .dataset_searcher import dataset_searcher
 from .dataset_answer import dataset_answer
 from .responder import responder
+from .evaluater import evaluater
 from .delete import aa
 
 def index(max_chunk_size, index_folder):
@@ -25,6 +26,9 @@ def search_dataset(dataset_path, k, save_directory):
 
 def answer_dataset(student_search_results_path, k, save_directory):
     dataset_answer(Path(student_search_results_path), k, Path(save_directory))
+
+def evaluate(student_search_results_path, dataset_path):
+    evaluater(Path(student_search_results_path), Path(dataset_path))
 
 def a():
     aa()

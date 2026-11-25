@@ -1,37 +1,33 @@
-from pathlib import Path
-from src.retriever import BM25Retriever
-from .utils import processed_path
-
-
-def check_iou(first, last, start, end):
+def check_iou(result_first, result_last, data_start, data_end):
     """Calculate IoU between two character ranges."""
-    intersection = max(0, min(last, end) - max(first, start))
-    union = max(last, end) - min(first, start)
+    intersection = max(0, min(result_last, data_end) - max(result_first, data_start))
+    union = max(result_last, data_end) - min(result_first, data_start)
 
     if union == 0:
         return 0.0
 
     return intersection / union
 
-def check_recall_at_five(e, index_folder=Path(processed_path)):
-    query = e["question"]
+def check_recall_at_five(result, data):
 
-    rag_path = e["sources"][0]["file_path"]
+    print(result)
 
-    first = e["sources"][0]["first_character_index"]
-    last = e["sources"][0]["last_character_index"]
+    retrieved_sources = result["retrieved_sources"]
 
-    bm25Retriever = BM25Retriever()
-    best_matches = bm25Retriever.retrieve(query, 5, index_folder)
+    if result["question_id"] != data["question_id"]:
+        raise ValueError("not same id")
 
-    for chunk in best_matches:
-        if chunk.metadata["file_path"] != rag_path:
+    for source in retrieved_sources:
+        if source["file_path"] != source["file_path"]:
             continue
 
-        start = chunk.metadata["first_character_index"]
-        end = chunk.metadata["last_character_index"]
+        result_first = source["first_character_index"]
+        result_last = source["last_character_index"]
 
-        iou = check_iou(first, last, start, end)
+        data_start = source["first_character_index"]
+        data_end = source["last_character_index"]
+
+        iou = check_iou(result_first, result_last, data_start, data_end)
 
         if iou > 0.05:
             return True

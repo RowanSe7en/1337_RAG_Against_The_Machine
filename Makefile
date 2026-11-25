@@ -12,9 +12,10 @@ K ?= 5
 
 MAX_CHUNK_SIZE ?= 1700
 INDEX_FOLDER ?= data/processed/
-DATASET_PATH ?= data/datasets/UnansweredQuestions/dataset_code_public.json
+DATASET_PATH ?= data/datasets/UnansweredQuestions/dataset_docs_public.json
+ANSWERED_DATASET_PATH ?= data/datasets/AnsweredQuestions/dataset_docs_public.json
 SAVE_DIRECTORY ?= data/output/search_results/UnansweredQuestions
-STUDENT_SEARCH_RESULT_PATH ?= data/output/search_results/UnansweredQuestions/StudentSearchResults.json
+STUDENT_SEARCH_RESULT_PATH ?= data/output/search_results/UnansweredQuestions/dataset_docs_public.json
 STUDENT_SEARCH_RESULT_AND_ANSWER_PATH ?= data/output/search_results/UnansweredQuestions/StudentSearchResultsAndAnswer.json
 
 .PHONY: install run debug clean lint lint-strict
@@ -38,6 +39,9 @@ search_dataset:
 
 answer_dataset:
 	uv run python -m src answer_dataset --student_search_results_path "$(STUDENT_SEARCH_RESULT_PATH)" --k $(K) --save_directory "$(SAVE_DIRECTORY)"
+
+evaluate:
+	uv run python -m src evaluate --student_search_results_path "$(STUDENT_SEARCH_RESULT_PATH)" --dataset_path "$(ANSWERED_DATASET_PATH)"
 
 debug:
 	uv run python -m pdb -m src

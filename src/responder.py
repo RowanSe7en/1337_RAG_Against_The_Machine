@@ -20,7 +20,7 @@ def responder(query, k):
         print(source)
         print("----------------------------------")
 
-        with open(source.metadata["file_path"]) as my_file:
+        with open(source.metadata["file_path"], 'r') as my_file:
             content = my_file.read()
             chunk_content = content[
                 source.metadata["first_character_index"]:source.metadata["last_character_index"]

@@ -1,5 +1,4 @@
 from huggingface_hub import snapshot_download
-# from transformers import AutoTokenizer, AutoModelForCausalLM
 
 def ask_model(model, tokenizer, query: str, retrieved_chunks) -> str:
 
