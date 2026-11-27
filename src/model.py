@@ -3,8 +3,6 @@ from huggingface_hub import snapshot_download
 def ask_model(model, tokenizer, query: str, retrieved_chunks) -> str:
 
     prompt = f"""
-SYSTEM:
-
 You are a technical assistant specialized
 in vLLM documentation and source code.
 
@@ -35,11 +33,22 @@ Provide a clear technical explanation
 with citations.
 """
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
+
+    inputs = tokenizer(text, return_tensors="pt").to(model.device)
 
     outputs = model.generate(
         **inputs,
-        max_new_tokens=64,
+        max_new_tokens=300,
         do_sample=False,
         repetition_penalty=1.2,
         eos_token_id=tokenizer.eos_token_id,

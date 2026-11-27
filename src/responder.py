@@ -16,9 +16,6 @@ def responder(query, k):
     chunks = []
 
     for i, source in enumerate(retrieved_sources, start=1):
-        print("----------------------------------")
-        print(source)
-        print("----------------------------------")
 
         with open(source.metadata["file_path"], 'r') as my_file:
             content = my_file.read()
