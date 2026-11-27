@@ -13,6 +13,7 @@ def indexer(max_chunk_size):
         max_chunk_size = 1700
 
     all_chunks = []
+    all_embeddings = []
 
     chunker = Chunker(max_chunk_size)
     paths = list(Path(corpus_path).rglob("*"))
@@ -26,15 +27,21 @@ def indexer(max_chunk_size):
             continue
 
         if path.is_file() and path.suffix not in UNSUPPORTED_EXTENSIONS:
-            all_chunks.extend(chunker.split_file(path))
+            chunks, embeddings = chunker.split_file(path)
+            all_chunks.extend(chunks)
+            all_embeddings.extend(embeddings)
 
     dire = Path(processed_path)
     dire.mkdir(parents=True, exist_ok=True)
 
     index_file = dire / "chunks.pkl"
+    index_embeddings_file = dire / "embeddings.pkl"
 
     with open(index_file, "wb") as my_file:
         pickle.dump(all_chunks, my_file)
+
+    with open(index_embeddings_file, "wb") as my_file:
+        pickle.dump(all_embeddings, my_file)
 
     bm25Retriever = BM25Retriever()
     bm25Retriever.bm25_index(all_chunks, dire)

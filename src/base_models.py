@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
+import uuid
+
 
 class UnansweredQuestion(BaseModel):
     question_id: str = Field(default_factory=lambda:str(uuid.uuid4()))

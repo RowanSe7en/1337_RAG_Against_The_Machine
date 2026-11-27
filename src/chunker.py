@@ -1,5 +1,6 @@
 
 import math
+import uuid
 from pathlib import Path
 from .base_models import MinimalSource
 from sentence_transformers import SentenceTransformer
@@ -20,8 +21,12 @@ class Chunker(SemanticSpliter):
 
     def add_metadata(self, chunks, path):
 
+        embeddings = []
+
         for chunk in chunks:
             chunk.metadata["file_path"] = path
+            id = uuid.uuid4()
+            chunk.id = id
 
             if "start_index" in chunk.metadata:
                 start = chunk.metadata.pop("start_index")
@@ -37,7 +42,17 @@ class Chunker(SemanticSpliter):
                 last_character_index=chunk.metadata["last_character_index"],
             )
 
-        return chunks
+            embedded_chunk = {}
+            embedded_chunk['id'] = id
+            embedded_chunk['embeddings'] = self.embedding_model.encode(
+                                                chunk.page_content,
+                                                normalize_embeddings=True,
+                                                convert_to_numpy=True,
+                                                show_progress_bar=False,
+                                            )
+            embeddings.append(embedded_chunk)
+
+        return (chunks, embeddings)
 
     def split_file(self, path: Path) -> list[Document]:
         """Split a file into chunks."""
